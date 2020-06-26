@@ -124,7 +124,7 @@ if os.name == "nt":
             lib = CDLL(winGPUdll, RTLD_GLOBAL)
             print("Environment variables indicated a CPU run, but we didn't find `"+winNoGPUdll+"`. Trying a GPU run anyway.")
 else:
-    lib = CDLL("./libdarknet.so", RTLD_GLOBAL)
+    lib = CDLL("./libdark.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
 lib.network_height.argtypes = [c_void_p]
@@ -221,6 +221,7 @@ network_predict_batch.argtypes = [c_void_p, IMAGE, c_int, c_int, c_int,
                                    c_float, c_float, POINTER(c_int), c_int, c_int]
 network_predict_batch.restype = POINTER(DETNUMPAIR)
 
+
 def array_to_image(arr):
     import numpy as np
     # need to return old values to avoid python freeing memory
@@ -232,6 +233,7 @@ def array_to_image(arr):
     data = arr.ctypes.data_as(POINTER(c_float))
     im = IMAGE(w,h,c,data)
     return im, arr
+
 
 def classify(net, meta, im):
     out = predict_image(net, im)
