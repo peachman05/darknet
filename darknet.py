@@ -124,7 +124,7 @@ if os.name == "nt":
             lib = CDLL(winGPUdll, RTLD_GLOBAL)
             print("Environment variables indicated a CPU run, but we didn't find `"+winNoGPUdll+"`. Trying a GPU run anyway.")
 else:
-    lib = CDLL("./libdark.so", RTLD_GLOBAL)
+    lib = CDLL("./libdarknet.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
 lib.network_height.argtypes = [c_void_p]
@@ -221,6 +221,9 @@ network_predict_batch.argtypes = [c_void_p, IMAGE, c_int, c_int, c_int,
                                    c_float, c_float, POINTER(c_int), c_int, c_int]
 network_predict_batch.restype = POINTER(DETNUMPAIR)
 
+ndarray_image = lib.ndarray_to_image
+ndarray_image.argtypes = [POINTER(c_ubyte), POINTER(c_long), POINTER(c_long)]
+ndarray_image.restype = IMAGE
 
 def array_to_image(arr):
     import numpy as np
@@ -234,6 +237,11 @@ def array_to_image(arr):
     im = IMAGE(w,h,c,data)
     return im, arr
 
+def nparray_to_image(img):
+    data = img.ctypes.data_as(POINTER(c_ubyte))
+    image = ndarray_image(data, img.ctypes.shape, img.ctypes.strides)
+
+    return image
 
 def classify(net, meta, im):
     out = predict_image(net, im)
@@ -247,12 +255,15 @@ def classify(net, meta, im):
     res = sorted(res, key=lambda x: -x[1])
     return res
 
+
+
 def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45, debug= False):
     """
     Performs the meat of the detection
     """
     #pylint: disable= C0321
-    im = load_image(image, 0, 0)
+    # im = load_image(image, 0, 0)
+    im = nparray_to_image(image)
     if debug: print("Loaded image")
     ret = detect_image(net, meta, im, thresh, hier_thresh, nms, debug)
     free_image(im)
